@@ -3,7 +3,7 @@ use near_sdk::serde::{Deserialize, Serialize};
 use crate::*;
 
 // Cong thuc tinh thuong cho user
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Copy, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Config {
     pub reward_numerator: u32,
