@@ -1,15 +1,22 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::LookupMap;
-use near_sdk::serde::{Deserializer, Serializer};
+use near_sdk::json_types::U128;
+
 use near_sdk::{
     env, near_bindgen, AccountId, Balance, BlockHeight, BorshStorageKey, EpochHeight,
-    PanicOnDefault,
+    PanicOnDefault, Promise, Timestamp,
 };
 
 use crate::account::*;
 use crate::config::*;
+use crate::enumeration::*;
+use crate::internal::*;
+use crate::util::*;
 mod account;
 mod config;
+mod enumeration;
+mod internal;
+mod util;
 
 #[derive(BorshDeserialize, BorshSerialize, BorshStorageKey)]
 pub enum StorageKey {
@@ -26,9 +33,10 @@ pub struct StakingContract {
     pub total_paid_reward_balance: Balance,
     pub total_staker: Balance,
     pub pre_reward: Balance,
-    pub last_bloc_balance_change: BlockHeight,
-    pub accounts: LookupMap<AccountId, Account>,
+    pub last_block_balance_change: BlockHeight,
+    pub accounts: LookupMap<AccountId, UpgradeableAccount>,
     pub paused: bool, //het token cho user thi user khong deposite dc nua
+    pub pause_in_block: BlockHeight, //  save lai trang thai block khi owner chuyen sang pause, de tinh toan reward
 }
 
 #[near_bindgen]
@@ -48,10 +56,44 @@ impl StakingContract {
             total_paid_reward_balance: 0,
             total_staker: 0,
             pre_reward: 0,
-            last_bloc_balance_change: env::block_index(),
+            last_block_balance_change: env::block_index(),
             accounts: LookupMap::new(StorageKey::AccountKey),
             paused: false,
+            pause_in_block: 0, //tai sao lai la 0
         }
+    }
+
+    // deposite token when create account
+    #[payable]
+    pub fn storaget_deposit(&mut self, account_id: Option<AccountId>) {
+        assert_at_least_one_yocto();
+        let account = account_id.unwrap_or_else(|| env::predecessor_account_id()); //get current account call
+        let _account_stake = self.accounts.get(&account);
+        if _account_stake.is_some() {
+            // refund all token deposite
+            refund_deposite(0);
+        } else {
+            // create new account
+            // Refund token deposite after creating new account
+            let before_storage_usage = env::storage_usage();
+
+            let after_storage_usage = env::storage_usage();
+            refund_deposite(after_storage_usage - before_storage_usage);
+        }
+    }
+
+    //check if account is exists
+    pub fn storage_balance_of(&self, account_id: AccountId) -> U128 {
+        let account = self.accounts.get(&account_id);
+        if account.is_some() {
+            U128(1)
+        } else {
+            U128(0)
+        }
+    }
+
+    pub fn is_paused(&self) -> bool {
+        self.paused
     }
 }
 
