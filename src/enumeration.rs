@@ -11,6 +11,7 @@ pub struct PoolJson {
     pub is_paused: bool,
 }
 
+#[near_bindgen]
 impl StakingContract {
     pub fn get_account_info(&self, account_id: AccountId) -> AccountJson {
         let upgradeable_account = self.accounts.get(&account_id).unwrap();
