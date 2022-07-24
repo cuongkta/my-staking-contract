@@ -24,6 +24,21 @@ pub enum StorageKey {
 }
 
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+pub struct StakingContractV1 {
+    pub owner_id: AccountId,
+    pub ft_contract_id: AccountId,
+    pub config: Config,               // Cau hinh tra thuong
+    pub total_stake_balance: Balance, // Tong so luong dang stake
+    pub total_paid_reward_balance: Balance,
+    pub total_staker: Balance,
+    pub pre_reward: Balance,
+    pub last_block_balance_change: BlockHeight,
+    pub accounts: LookupMap<AccountId, UpgradeableAccount>,
+    pub paused: bool, //het token cho user thi user khong deposite dc nua
+    pub pause_in_block: BlockHeight//  save lai trang thai block khi owner chuyen sang pause, de tinh toan reward
+}
+
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 #[near_bindgen]
 pub struct StakingContract {
     pub owner_id: AccountId,
@@ -37,6 +52,7 @@ pub struct StakingContract {
     pub accounts: LookupMap<AccountId, UpgradeableAccount>,
     pub paused: bool, //het token cho user thi user khong deposite dc nua
     pub pause_in_block: BlockHeight, //  save lai trang thai block khi owner chuyen sang pause, de tinh toan reward
+    pub new_data: U128
 }
 
 #[near_bindgen]
@@ -60,12 +76,13 @@ impl StakingContract {
             accounts: LookupMap::new(StorageKey::AccountKey),
             paused: false,
             pause_in_block: 0, //tai sao lai la 0
+            new_data: U128(10)
         }
     }
 
     // deposite token when create account
     #[payable]
-    pub fn storaget_deposit(&mut self, account_id: Option<AccountId>) {
+    pub fn storage_deposit(&mut self, account_id: Option<AccountId>) {
         assert_at_least_one_yocto();
         let account = account_id.unwrap_or_else(|| env::predecessor_account_id()); //get current account call
         let _account_stake = self.accounts.get(&account);
@@ -94,6 +111,31 @@ impl StakingContract {
 
     pub fn is_paused(&self) -> bool {
         self.paused
+    }
+
+    pub fn get_newdata(&self) -> U128{
+        self.new_data
+    }
+
+    #[private]
+    #[init(ignore_state)]
+    pub fn migrate() -> Self{  //migrate function for case when change structure of contract
+        let contract_v1: StakingContractV1 = env::state_read().expect("Can not read contract");
+    
+        StakingContract { 
+            owner_id: contract_v1.owner_id, 
+            ft_contract_id: contract_v1.ft_contract_id, 
+            config: contract_v1.config, 
+            total_stake_balance: contract_v1.total_stake_balance, 
+            total_paid_reward_balance: contract_v1.total_paid_reward_balance, 
+            total_staker: contract_v1.total_staker, 
+            pre_reward: contract_v1.pre_reward, 
+            last_block_balance_change: contract_v1.last_block_balance_change, 
+            accounts: contract_v1.accounts, 
+            paused: contract_v1.paused, 
+            pause_in_block: contract_v1.pause_in_block, 
+            new_data: U128(0)
+        }
     }
 }
 
