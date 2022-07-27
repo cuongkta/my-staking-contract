@@ -16,15 +16,16 @@ cargo test
 # Call 
 
 ```
-near call dev-1658532518731-29971022106934 new_default_config '{"owner_id": "tonnyta.testnet", "ft_contract_id": "ft_tonnyta.testnet"}' --accountId tonnyta.testnet
+near call ev-1658789183800-49068626170913 new_default_config '{"owner_id": "tonnyta.testnet", "ft_contract_id": "ft-k6.tonnyta.testnet"}' --accountId tonnyta.testnet
 
 ```
 
+Voi ft-k6.tonnyta.testnet la account deply fungule token 
 
 # View 
 
 ```
-near view dev-1658532518731-29971022106934 get_pool_info
+near view ev-1658789183800-49068626170913 get_pool_info
 ```
 
 
@@ -35,6 +36,76 @@ near view dev-1658532518731-29971022106934 get_pool_info
 near dev-deploy ./out/my-staking-contract.wasm  --initFunction migrate --initArgs '{}'
 
 ```
+
+
+# Create new account 
+
+```
+near call dev-1658789183800-49068626170913 storage_deposit  --deposit 0.01 --accountId tonnyta.testnet
+```
+
+
+# Get Account Info 
+
+```
+near view dev-1658789183800-49068626170913 get_account_info '{"account_id" :"tonnyta.testnet"}'
+
+```
+
+
+# Create new account in ft contract 
+
+```
+near call ft-k6.tonnyta.testnet storage_deposit --deposit 0.01 --accountId dev-1658789183800-49068626170913
+```
+
+# Transfer token 
+
+```
+near call ft-k6.tonnyta.testnet ft_transfer '{"receiver_id": "dev-1658789183800-49068626170913", "amount": "1000000000000000000000000"}' --accountId tonnyta.testnet  --depositYocto 1
+
+```
+
+
+# Deposite and Stake 
+
+```
+near call ft-k6.tonnyta.testnet ft_transfer_call '{"receiver_id": "dev-1658789183800-49068626170913", "amount": "1000000000000000000000000", "msg": ""}' --accountId tonnyta.testnet  --depositYocto 1 --gas 60000000000000
+
+```
+Chu y co ft_on_transfer o staking contract vi ft contract se goi sang 
+
+
+
+
+#Harvest reward 
+
+```
+near call dev-1658789183800-49068626170913 harvest --accountId tonnyta.testnet --depositYocto 1 --gas 60000000000000
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

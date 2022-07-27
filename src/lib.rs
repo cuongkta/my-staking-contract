@@ -4,7 +4,7 @@ use near_sdk::json_types::U128;
 
 use near_sdk::{
     env, near_bindgen, AccountId, Balance, BlockHeight, BorshStorageKey, EpochHeight,
-    PanicOnDefault, Promise, Timestamp,
+    PanicOnDefault, Promise, Timestamp, PromiseOrValue
 };
 
 use crate::account::*;
@@ -12,11 +12,13 @@ use crate::config::*;
 use crate::enumeration::*;
 use crate::internal::*;
 use crate::util::*;
+use crate::core_impl::*;
 mod account;
 mod config;
 mod enumeration;
 mod internal;
 mod util;
+mod core_impl;
 
 #[derive(BorshDeserialize, BorshSerialize, BorshStorageKey)]
 pub enum StorageKey {
@@ -93,8 +95,11 @@ impl StakingContract {
             // create new account
             // Refund token deposite after creating new account
             let before_storage_usage = env::storage_usage();
-
+            self.internal_register_account(account.clone());
+            env::log(b"Create Account Successfully");
             let after_storage_usage = env::storage_usage();
+            let log_message = format!("Deposite {}", after_storage_usage - before_storage_usage);
+            env::log(log_message.as_bytes());
             refund_deposite(after_storage_usage - before_storage_usage);
         }
     }
