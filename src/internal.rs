@@ -11,6 +11,9 @@ impl StakingContract {
 
 
         let mut account  = Account::from(upgradable_account.unwrap());
+        env::log(b"Account is");
+        env::log(account_id.to_string().as_bytes());
+        env::log(account.stake_balance.to_string().as_bytes());
         if account.stake_balance == 0 {
             self.total_staker +=1;
         }
