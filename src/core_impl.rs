@@ -38,6 +38,7 @@ pub trait FungibleToken {
 #[ext_contract(ext_self)]
 pub trait ExtStakingContract {
     fn ft_transfer_callback(&mut self, amount: U128, account_id: AccountId);
+    fn ft_withdraw_callback(&mut self, account_id: AccountId, old_account: Account);
 }
 
 #[near_bindgen]
@@ -46,6 +47,28 @@ impl StakingContract {
         assert_one_yocto();
         let account_id = env::predecessor_account_id();
         self.internal_unstake(account_id, amount.0);
+    }
+
+    #[payable]
+    pub fn withdraw(&mut self) -> Promise {
+    	assert_one_yocto();
+    	let account_id = env::predecessor_account_id();
+    	let old_account  = self.internal_withdraw(account_id.clone());
+    	ext_ft_contract::ft_transfer(
+    		account_id.clone(),
+    		U128(old_account.unstake_balance), 
+    		Some("Staking contract withdraw".to_string()), 
+    		&self.ft_contract_id, 
+    		DEPOSIT_ONE_YOCTO, 
+    		FT_TRANSFER_GAS
+    	).then(ext_self::ft_withdraw_callback(
+    		account_id.clone(), 
+    		old_account, 
+    		&env::current_account_id(), 
+    		NO_DEPOSIT,
+    		FT_HARVEST_CALLBACK_GAS)
+
+    	)
     }
 
     #[payable]
@@ -94,5 +117,21 @@ impl StakingContract {
                 amount
             }
         }
+    }
+
+
+    pub fn ft_withdraw_callback(&mut self, account_id: AccountId, old_account: Account) -> U128{
+    	assert_eq!(env::promise_results_count(), 1, "ERROR_TOO_MANY_RESULTS" );
+    	match env::promise_result(0){
+    		PromiseResult::NotReady => unreachable!(),
+    		PromiseResult::Successful(_value) => {
+    			U128(old_account.unstake_balance)
+    		}
+    		PromiseResult::Failed => {
+    			//hanlde rollback data 
+    			self.accounts.insert(&account_id, &UpgradeableAccount::from(old_account));
+    			U128(0)
+    		}
+    	}
     }
 }

@@ -2,7 +2,8 @@ use near_sdk::serde::{Deserialize, Serialize};
 
 use crate::*;
 
-#[derive(BorshDeserialize, BorshSerialize)]
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
 pub struct Account {
     pub stake_balance: Balance, //tong so luong token deposite
     pub pre_reward: Balance,
