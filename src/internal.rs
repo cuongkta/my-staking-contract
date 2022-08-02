@@ -2,40 +2,68 @@ use crate::*;
 
 #[near_bindgen]
 impl StakingContract {
+    pub(crate) fn internal_unstake(&mut self, account_id: AccountId, amount: u128) {
+        let upgradeable_account = self.accounts.get(&account_id).unwrap();
+        let mut account = Account::from(upgradeable_account);
+        assert!(
+            amount <= account.stake_balance,
+            "ERROR_AMOUNT_MUST_LESS_THAN_STAKE"
+        );
+        let new_reward = self.internal_calculate_account_reward(&account);
+        // update account data
+        account.pre_reward = new_reward;
+        account.stake_balance -= amount;
+        account.last_block_balance_change = env::block_index();
+        account.unstake_balance += amount;
+        account.unstake_start_timestamp = env::block_timestamp();
+        account.unstake_available_epoch = env::epoch_height() + 1; //epoch tiep theo co the rut -widthdraw
 
-    pub(crate) fn internal_deposit_and_stake(&mut self, account_id: AccountId, amount: u128){
-        let upgradable_account  = self.accounts.get(&account_id);
+        if account.unstake_balance == 0 {
+            self.total_stake_balance -= 1;
+        }
+
+        self.accounts
+            .insert(&account_id, &UpgradeableAccount::from(account));
+
+        let new_contract_reward = self.internal_calculate_global_reward();
+        self.pre_reward += new_contract_reward;
+        self.last_block_balance_change = env::block_index();
+        self.total_stake_balance -= amount;
+    }
+
+    pub(crate) fn internal_deposit_and_stake(&mut self, account_id: AccountId, amount: u128) {
+        let upgradable_account = self.accounts.get(&account_id);
         assert!(upgradable_account.is_some(), "ERROR_ACCOUNT_NOT_FOUND");
         assert_eq!(self.paused, false, "ERROR_CONTRACT_PAUSED");
-        assert_eq!(self.ft_contract_id, env::predecessor_account_id(),  "ERROR_INVALID_FT_CONTRACT_ID" );
+        assert_eq!(
+            self.ft_contract_id,
+            env::predecessor_account_id(),
+            "ERROR_INVALID_FT_CONTRACT_ID"
+        );
 
-
-        let mut account  = Account::from(upgradable_account.unwrap());
+        let mut account = Account::from(upgradable_account.unwrap());
         env::log(b"Account is");
         env::log(account_id.to_string().as_bytes());
         env::log(account.stake_balance.to_string().as_bytes());
         if account.stake_balance == 0 {
-            self.total_staker +=1;
+            self.total_staker += 1;
         }
 
         let new_reward = self.internal_calculate_account_reward(&account);
 
-        //update account data 
+        //update account data
         account.pre_reward += new_reward;
         account.stake_balance += amount;
         account.last_block_balance_change = env::block_index();
-        self.accounts.insert(&account_id, &UpgradeableAccount::from(account));
+        self.accounts
+            .insert(&account_id, &UpgradeableAccount::from(account));
 
-
-        //Update pool data 
+        //Update pool data
 
         let new_contract_reward = self.internal_calculate_global_reward();
         self.total_stake_balance += amount;
         self.pre_reward += new_contract_reward;
         self.last_block_balance_change = env::block_index();
-
-
-
     }
 
     // Register account
