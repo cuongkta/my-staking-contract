@@ -43,6 +43,7 @@ pub trait ExtStakingContract {
 
 #[near_bindgen]
 impl StakingContract {
+	#[payable]
     pub fn unstake(&mut self, amount: U128) {
         assert_one_yocto();
         let account_id = env::predecessor_account_id();

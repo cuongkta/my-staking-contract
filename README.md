@@ -88,6 +88,22 @@ near call  dev-1658789183800-49068626170913 harvest --accountId mocdiep.testnet 
 ```
 
 
+#Unstake token 
+
+```
+near call dev-1658789183800-49068626170913 unstake '{"amount": "1000000"}' --accountId tonnyta.testnet --depositYocto 1
+
+```
+
+
+# Withdraw token 
+
+```
+near call dev-1658789183800-49068626170913 withdraw --accountId tonnyta.testnet --depositYocto 1 --gas 60000000000000
+
+```
+
+
 
 ---------------------- Not releate but will be noted -------------------------
 
