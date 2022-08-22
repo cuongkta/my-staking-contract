@@ -169,3 +169,9 @@ near call ft-k6.tonnyta.testnet ft_transfer '{"receiver_id": "staking.tonnyta.te
 near view ft-k6.tonnyta.testnet ft_balance_of '{"account_id": "staking.tonnyta.testnet"}'
 
 ```
+
+
+
+Harvest will return token in ft token of account 
+
+Unstake (stake_balance =- amount and wait for available epoch to withdraw)   --> WithDraw ( receiver account will receive in ft token = un_stake token)

@@ -33,23 +33,29 @@ impl StakingContract {
 
     pub(crate) fn internal_withdraw(&mut self, account_id: AccountId) -> Account {
         let upgradable_account = self.accounts.get(&account_id).unwrap();
-        let account  = Account::from(upgradable_account);
+        let account = Account::from(upgradable_account);
 
-        assert!(account.unstake_balance > 0, "ERROR_UNSTAKE_BALANCE_EQUAL_ZERO");
-        assert!(account.unstake_available_epoch <= env::epoch_height(), "ERROR_DISABLE_WITHDRAW");
+        assert!(
+            account.unstake_balance > 0,
+            "ERROR_UNSTAKE_BALANCE_EQUAL_ZERO"
+        );
+        assert!(
+            account.unstake_available_epoch <= env::epoch_height(),
+            "ERROR_DISABLE_WITHDRAW"
+        );
 
-        let new_account  = Account{
-            stake_balance: account.stake_balance,
-            pre_reward: account.pre_reward, 
+        let new_account = Account {
+            stake_balance: account.stake_balance, // current stake balance after unstake step
+            pre_reward: account.pre_reward,       // current pre_reward in unstake time
             last_block_balance_change: account.last_block_balance_change,
-            unstake_balance: 0, 
-            unstake_start_timestamp: 0, 
-            unstake_available_epoch: 0
+            unstake_balance: 0,
+            unstake_start_timestamp: 0,
+            unstake_available_epoch: 0,
         };
-        self.accounts.insert(&account_id, &UpgradeableAccount::from(new_account));
+        self.accounts
+            .insert(&account_id, &UpgradeableAccount::from(new_account));
 
         account
-
     }
 
     pub(crate) fn internal_deposit_and_stake(&mut self, account_id: AccountId, amount: u128) {
